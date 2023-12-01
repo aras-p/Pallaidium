@@ -520,6 +520,8 @@ def low_vram():
     for i in range(torch.cuda.device_count()):
         properties = torch.cuda.get_device_properties(i)
         total_vram += properties.total_memory
+    if os_platform == "Darwin":
+        total_vram = 0
     return (total_vram / (1024**3)) < 6.1  # Y/N under 6.1 GB?
 
 
@@ -1024,36 +1026,6 @@ class GeneratorAddonPreferences(AddonPreferences):
         name="Video Model",
         items=[
             (
-                "guoyww/animatediff-motion-adapter-v1-5-2",
-                "AnimateDiff",
-                "AnimateDiff",
-            ),
-            # ("hotshotco/Hotshot-XL", "Hotshot-XL (512x512)", "Hotshot-XL (512x512)"),
-            ("strangeman3107/animov-0.1.1", "Animov (448x384)", "Animov (448x384)"),
-            ("strangeman3107/animov-512x", "Animov (512x512)", "Animov (512x512)"),
-#            (
-#                "stabilityai/stable-diffusion-xl-base-1.0",
-#                "Img2img SD XL 1.0 Refine (1024x1024)",
-#                "Stable Diffusion XL 1.0",
-#            ),
-            ("camenduru/potat1", "Potat v1 (1024x576)", "Potat (1024x576)"),
-            # ("VideoCrafter/Image2Video-512", "VideoCrafter v1 (512x512)", "VideoCrafter/Image2Video-512"),
-            (
-                "cerspense/zeroscope_v2_dark_30x448x256",
-                "Zeroscope (448x256x30)",
-                "Zeroscope (448x256x30)",
-            ),
-            (
-                "cerspense/zeroscope_v2_576w",
-                "Zeroscope (576x320x24)",
-                "Zeroscope (576x320x24)",
-            ),
-            (
-                "cerspense/zeroscope_v2_XL",
-                "Zeroscope XL (1024x576x24)",
-                "Zeroscope XL (1024x576x24)",
-            ),
-            (
                 "stabilityai/stable-video-diffusion-img2vid-xt",
                 "Stable Video Diffusion XT (576x1024x24) ",
                 "stabilityai/stable-video-diffusion-img2vid-xt",
@@ -1063,6 +1035,36 @@ class GeneratorAddonPreferences(AddonPreferences):
                 "Stable Video Diffusion (576x1024x14)",
                 "stabilityai/stable-video-diffusion-img2vid",
             ),
+#            (
+#                "stabilityai/stable-diffusion-xl-base-1.0",
+#                "Img2img SD XL 1.0 Refine (1024x1024)",
+#                "Stable Diffusion XL 1.0",
+#            ),
+            #("camenduru/potat1", "Potat v1 (1024x576)", "Potat (1024x576)"),
+            # ("VideoCrafter/Image2Video-512", "VideoCrafter v1 (512x512)", "VideoCrafter/Image2Video-512"),
+            (
+                "cerspense/zeroscope_v2_XL",
+                "Zeroscope XL (1024x576x24)",
+                "Zeroscope XL (1024x576x24)",
+            ),
+            (
+                "cerspense/zeroscope_v2_576w",
+                "Zeroscope (576x320x24)",
+                "Zeroscope (576x320x24)",
+            ),
+            (
+                "cerspense/zeroscope_v2_dark_30x448x256",
+                "Zeroscope (448x256x30)",
+                "Zeroscope (448x256x30)",
+            ),
+            (
+                "guoyww/animatediff-motion-adapter-v1-5-2",
+                "AnimateDiff",
+                "AnimateDiff",
+            ),
+            # ("hotshotco/Hotshot-XL", "Hotshot-XL (512x512)", "Hotshot-XL (512x512)"),
+            ("strangeman3107/animov-512x", "Animov (512x512)", "Animov (512x512)"),
+            ("strangeman3107/animov-0.1.1", "Animov (448x384)", "Animov (448x384)"),
         ],
         default="cerspense/zeroscope_v2_576w",
         update=input_strips_updated,
@@ -1071,6 +1073,38 @@ class GeneratorAddonPreferences(AddonPreferences):
     image_model_card: bpy.props.EnumProperty(
         name="Image Model",
         items=[
+            (
+                "stabilityai/stable-diffusion-xl-base-1.0",
+                "Stable Diffusion XL 1.0 (1024x1024)",
+                "stabilityai/stable-diffusion-xl-base-1.0",
+            ),
+            (
+                "stabilityai/sdxl-turbo",
+                "Stable Diffusion Turbo (512x512)",
+                "stabilityai/sdxl-turbo",
+            ),
+            (
+                "runwayml/stable-diffusion-v1-5",
+                "Stable Diffusion 1.5 (512x512)",
+                "runwayml/stable-diffusion-v1-5",
+            ),
+            (
+                "stabilityai/stable-diffusion-2",
+                "Stable Diffusion 2 (768x768)",
+                "stabilityai/stable-diffusion-2",
+            ),
+            (
+                "segmind/SSD-1B",
+                "Segmind SSD-1B (1024x1024)",
+                "segmind/SSD-1B",
+            ),
+            (
+                "Lykon/dreamshaper-7",
+                "Dreamshaper LCM v7 (1024 x 1024)",
+                "Lykon/dreamshaper-7",
+            ),
+            # ("ptx0/terminus-xl-gamma-v1", "Terminus XL Gamma v1", "ptx0/terminus-xl-gamma-v1"),
+            ("warp-ai/wuerstchen", "Würstchen (1024x1024)", "warp-ai/wuerstchen"),
             (
                 "Salesforce/blipdiffusion",
                 "Blip Subject Driven (512x512)",
@@ -1081,12 +1115,7 @@ class GeneratorAddonPreferences(AddonPreferences):
                 "ControlNet (512x512)",
                 "lllyasviel/sd-controlnet-canny",
             ),
-            ("DeepFloyd/IF-I-M-v1.0", "DeepFloyd/IF-I-M-v1.0", "DeepFloyd/IF-I-M-v1.0"),
-            (
-                "Lykon/dreamshaper-7",
-                "Dreamshaper LCM v7 (1024 x 1024)",
-                "Lykon/dreamshaper-7",
-            ),
+            #("DeepFloyd/IF-I-M-v1.0", "DeepFloyd/IF-I-M-v1.0", "DeepFloyd/IF-I-M-v1.0"),
             (
                 "monster-labs/control_v1p_sd15_qrcode_monster",
                 "Illusion (512x512)",
@@ -1102,33 +1131,6 @@ class GeneratorAddonPreferences(AddonPreferences):
                 "Scribble (512x512)",
                 "lllyasviel/control_v11p_sd15_scribble",
             ),
-            (
-                "segmind/SSD-1B",
-                "Segmind SSD-1B (1024x1024)",
-                "segmind/SSD-1B",
-            ),
-            (
-                "runwayml/stable-diffusion-v1-5",
-                "Stable Diffusion 1.5 (512x512)",
-                "runwayml/stable-diffusion-v1-5",
-            ),
-            (
-                "stabilityai/stable-diffusion-2",
-                "Stable Diffusion 2 (768x768)",
-                "stabilityai/stable-diffusion-2",
-            ),
-            (
-                "stabilityai/sdxl-turbo",
-                "Stable Diffusion Turbo (512x512)",
-                "stabilityai/sdxl-turbo",
-            ),
-            (
-                "stabilityai/stable-diffusion-xl-base-1.0",
-                "Stable Diffusion XL 1.0 (1024x1024)",
-                "stabilityai/stable-diffusion-xl-base-1.0",
-            ),
-            # ("ptx0/terminus-xl-gamma-v1", "Terminus XL Gamma v1", "ptx0/terminus-xl-gamma-v1"),
-            ("warp-ai/wuerstchen", "Würstchen (1024x1024)", "warp-ai/wuerstchen"),
         ],
         default="stabilityai/stable-diffusion-xl-base-1.0",
         update=input_strips_updated,
@@ -1142,6 +1144,7 @@ class GeneratorAddonPreferences(AddonPreferences):
                 "Music: MusicGen Stereo",
                 "facebook/musicgen-stereo-small",
             ),
+            ("bark", "Speech: Bark", "Bark"),
             (
                 "cvssp/audioldm2-music",
                 "Music: AudioLDM 2",
@@ -1152,10 +1155,9 @@ class GeneratorAddonPreferences(AddonPreferences):
                 "Sound: AudioLDM 2",
                 "Sound: AudioLDM 2",
             ),
-            ("bark", "Speech: Bark", "Bark"),
             # ("declare-lab/mustango", "Mustango", "declare-lab/mustango"),
         ],
-        default="bark",
+        default="facebook/musicgen-stereo-small",
         update=input_strips_updated,
     )
 
