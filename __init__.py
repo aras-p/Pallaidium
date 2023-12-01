@@ -26,8 +26,16 @@ import string
 from os.path import dirname, realpath, isdir, join, basename
 import shutil
 from datetime import date
+import torch
 
 os_platform = platform.system()  # 'Linux', 'Darwin', 'Java', 'Windows'
+
+if torch.cuda.is_available():
+  gfx_device = "cuda"
+elif torch.backends.mps.is_available():
+  gfx_device = "mps"
+else:
+  gfx_device = "cpu"
 
 
 def show_system_console(show):
@@ -520,8 +528,6 @@ def low_vram():
     for i in range(torch.cuda.device_count()):
         properties = torch.cuda.get_device_properties(i)
         total_vram += properties.total_memory
-    if os_platform == "Darwin":
-        total_vram = 0
     return (total_vram / (1024**3)) < 6.1  # Y/N under 6.1 GB?
 
 
@@ -2002,7 +2008,7 @@ class SEQUENCER_OT_generate_movie(Operator):
 #                    # pipe.unet.enable_forward_chunking(chunk_size=1, dim=1) # Heavy
 #                    # pipe.enable_vae_slicing()
 #                else:
-#                    pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+#                    pipe.to(gfx_device)
 #                from diffusers import StableDiffusionXLImg2ImgPipeline
 
 #                refiner = StableDiffusionXLImg2ImgPipeline.from_pretrained(
@@ -2018,7 +2024,7 @@ class SEQUENCER_OT_generate_movie(Operator):
 #                    # refiner.enable_vae_tiling()
 #                    # refiner.enable_vae_slicing()
 #                else:
-#                    refiner.to('cuda' if torch.cuda.is_available() else 'cpu')
+#                    refiner.to(gfx_device)
             if (
                 movie_model_card == "stabilityai/stable-video-diffusion-img2vid"
                 or movie_model_card == "stabilityai/stable-video-diffusion-img2vid-xt"
@@ -2033,7 +2039,7 @@ class SEQUENCER_OT_generate_movie(Operator):
                 if low_vram():
                     refiner.enable_model_cpu_offload()
                 else:
-                    refiner.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    refiner.to(gfx_device)
             else:  # vid2vid / img2vid
                 if (
                     movie_model_card == "cerspense/zeroscope_v2_dark_30x448x256"
@@ -2065,7 +2071,7 @@ class SEQUENCER_OT_generate_movie(Operator):
                     # upscale.enable_vae_slicing()
                     #upscale.unet.enable_forward_chunking(chunk_size=1, dim=1)  # heavy:
                 else:
-                    upscale.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    upscale.to(gfx_device)
         # Models for movie generation
         else:
             if movie_model_card == "guoyww/animatediff-motion-adapter-v1-5-2":
@@ -2097,7 +2103,7 @@ class SEQUENCER_OT_generate_movie(Operator):
                     pipe.enable_model_cpu_offload()
                     # pipe.unet.enable_forward_chunking(chunk_size=1, dim=1)  # heavy:
                 else:
-                    upscale.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    upscale.to(gfx_device)
             elif movie_model_card == "VideoCrafter/Image2Video-512":
                 from diffusers import StableDiffusionPipeline
 
@@ -2116,7 +2122,7 @@ class SEQUENCER_OT_generate_movie(Operator):
                     pipe.enable_model_cpu_offload()
                     # pipe.enable_vae_slicing()
                 else:
-                    pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    pipe.to(gfx_device)
             elif (
                 movie_model_card == "stabilityai/stable-video-diffusion-img2vid"
                 or movie_model_card == "stabilityai/stable-video-diffusion-img2vid-xt"
@@ -2142,7 +2148,7 @@ class SEQUENCER_OT_generate_movie(Operator):
                     pipe.enable_model_cpu_offload()
                     # pipe.enable_vae_slicing()
                 else:
-                    pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    pipe.to(gfx_device)
             # Model for upscale generated movie
             if scene.video_to_video:
                 if torch.cuda.is_available():
@@ -2164,7 +2170,7 @@ class SEQUENCER_OT_generate_movie(Operator):
                     #upscale.unet.enable_forward_chunking(chunk_size=1, dim=1)  # Heavy
                     # upscale.enable_vae_slicing()
                 else:
-                    upscale.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    upscale.to(gfx_device)
         if scene.use_freeU and pipe:  # Free Lunch
             # -------- freeu block registration
             print("Process: FreeU")
@@ -2538,7 +2544,7 @@ class SEQUENCER_OT_generate_audio(Operator):
                 pipe.enable_model_cpu_offload()
                 # pipe.enable_vae_slicing()
             else:
-                pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                pipe.to(gfx_device)
                 
         # Musicgen
         elif addon_prefs.audio_model_card == "facebook/musicgen-stereo-small":
@@ -2876,7 +2882,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
                 torch_dtype=torch.float16,
                 variant="fp16",
-            ).to('cuda' if torch.cuda.is_available() else 'cpu')
+            ).to(gfx_device)
 
             # Set scheduler
             if scene.use_lcm:
@@ -2892,7 +2898,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 # torch.cuda.set_per_process_memory_fraction(0.99)
                 pipe.enable_model_cpu_offload()
             else:
-                pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                pipe.to(gfx_device)
                 
         # Conversion img2img/vid2img.
         elif (
@@ -2929,7 +2935,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 # refiner.enable_vae_tiling()
                 # converter.enable_vae_slicing()
             else:
-                converter.to('cuda' if torch.cuda.is_available() else 'cpu')
+                converter.to(gfx_device)
                 
         # ControlNet & Illusion
         elif (
@@ -2970,7 +2976,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 pipe.enable_model_cpu_offload()
                 # pipe.enable_vae_slicing()
             else:
-                pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                pipe.to(gfx_device)
                 
         # Blip
         elif image_model_card == "Salesforce/blipdiffusion":
@@ -2984,14 +2990,14 @@ class SEQUENCER_OT_generate_image(Operator):
 
                 pipe = BlipDiffusionPipeline.from_pretrained(
                     "Salesforce/blipdiffusion", torch_dtype=torch.float16
-                ).to('cuda' if torch.cuda.is_available() else 'cpu')
+                ).to(gfx_device)
             else:
                 from controlnet_aux import CannyDetector
                 from diffusers.pipelines import BlipDiffusionControlNetPipeline
 
                 pipe = BlipDiffusionControlNetPipeline.from_pretrained(
                     "Salesforce/blipdiffusion-controlnet", torch_dtype=torch.float16
-                ).to('cuda' if torch.cuda.is_available() else 'cpu')
+                ).to(gfx_device)
                 
         # OpenPose
         elif image_model_card == "lllyasviel/sd-controlnet-openpose":
@@ -3036,7 +3042,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 pipe.enable_model_cpu_offload()
                 # pipe.enable_vae_slicing()
             else:
-                pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                pipe.to(gfx_device)
                 
         # Scribble
         elif image_model_card == "lllyasviel/control_v11p_sd15_scribble":
@@ -3078,7 +3084,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 # pipe.enable_vae_slicing()
                 # pipe.enable_forward_chunking(chunk_size=1, dim=1)
             else:
-                pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                pipe.to(gfx_device)
                 
         # Dreamshaper
         elif image_model_card == "Lykon/dreamshaper-7":
@@ -3116,7 +3122,7 @@ class SEQUENCER_OT_generate_image(Operator):
             if low_vram():
                 pipe.enable_model_cpu_offload()
             else:
-                pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                pipe.to(gfx_device)
                 
         # DeepFloyd
         elif image_model_card == "DeepFloyd/IF-I-M-v1.0":
@@ -3137,7 +3143,7 @@ class SEQUENCER_OT_generate_image(Operator):
             if low_vram():
                 stage_1.enable_model_cpu_offload()
             else:
-                stage_1.to('cuda' if torch.cuda.is_available() else 'cpu')
+                stage_1.to(gfx_device)
                 
             # stage 2
             stage_2 = DiffusionPipeline.from_pretrained(
@@ -3149,7 +3155,7 @@ class SEQUENCER_OT_generate_image(Operator):
             if low_vram():
                 stage_2.enable_model_cpu_offload()
             else:
-                stage_2.to('cuda' if torch.cuda.is_available() else 'cpu')
+                stage_2.to(gfx_device)
                 
             # stage 3
             safety_modules = {
@@ -3165,7 +3171,7 @@ class SEQUENCER_OT_generate_image(Operator):
             if low_vram():
                 stage_3.enable_model_cpu_offload()
             else:
-                stage_3.to('cuda' if torch.cuda.is_available() else 'cpu')
+                stage_3.to(gfx_device)
 
         # Stable diffusion etc.
         else:
@@ -3228,7 +3234,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 pipe.enable_model_cpu_offload()
                 pipe.enable_vae_slicing()
             else:
-                pipe.to('cuda' if torch.cuda.is_available() else 'cpu')
+                pipe.to(gfx_device)
             if scene.use_freeU and pipe:  # Free Lunch
                 # -------- freeu block registration
                 print("Process: FreeU")
@@ -3287,7 +3293,7 @@ class SEQUENCER_OT_generate_image(Operator):
                 # refiner.enable_vae_tiling()
                 # refiner.enable_vae_slicing()
             else:
-                refiner.to('cuda' if torch.cuda.is_available() else 'cpu')
+                refiner.to(gfx_device)
         #        # Allow longer prompts.
         #        if image_model_card == "runwayml/stable-diffusion-v1-5":
         #            if pipe:
@@ -3843,7 +3849,7 @@ class SEQUENCER_OT_generate_text(Operator):
         )
         model = BlipForConditionalGeneration.from_pretrained(
             "Salesforce/blip-image-captioning-large", torch_dtype=torch.float16
-        ).to('cuda' if torch.cuda.is_available() else 'cpu')
+        ).to(gfx_device)
 
         init_image = (
             load_first_frame(scene.movie_path)
@@ -3854,7 +3860,7 @@ class SEQUENCER_OT_generate_text(Operator):
 
         text = ""
         inputs = processor(init_image, text, return_tensors="pt").to(
-            'cuda' if torch.cuda.is_available() else 'cpu', torch.float16
+            gfx_device, torch.float16
         )
 
         out = model.generate(**inputs, max_new_tokens=256)
