@@ -26,16 +26,19 @@ import string
 from os.path import dirname, realpath, isdir, join, basename
 import shutil
 from datetime import date
-import torch
+try:
+    exec("import torch")
+    if torch.cuda.is_available():
+      gfx_device = "cuda"
+    elif torch.backends.mps.is_available():
+      gfx_device = "mps"
+    else:
+      gfx_device = "cpu"
+except ModuleNotFoundError:
+    print("Pallaidium dependencies needs to be installed and then Blender needs to be restarted.")
 
 os_platform = platform.system()  # 'Linux', 'Darwin', 'Java', 'Windows'
 
-if torch.cuda.is_available():
-  gfx_device = "cuda"
-elif torch.backends.mps.is_available():
-  gfx_device = "mps"
-else:
-  gfx_device = "cpu"
 
 
 def show_system_console(show):
